@@ -1,0 +1,105 @@
+import curses
+from curses import wrapper
+import time
+import random
+
+
+def random_text():
+    with open("type_racer_text.txt", "r") as text_file:
+        sentences = text_file.readlines()
+        return random.choice(sentences).strip()
+
+def start(stdscr):
+    stdscr.clear()
+    stdscr.addstr("Welcome to Type Racer\n")
+    stdscr.addstr("Press any key to start...")
+    stdscr.refresh()
+    stdscr.getkey()
+
+def display_text(stdscr):
+    stdscr.clear()
+    start_text = random_text()
+    current_text = []
+    stdscr.addstr(start_text)
+    stdscr.refresh()
+    start_time = time.time()
+    wpm = 0
+    back_space_counter = 0
+    accuracy = 0
+
+    while True:
+        stdscr.nodelay(True)
+        current_time = max(time.time() - start_time, 1)
+        wpm = round((len(current_text) / (current_time / 60)) / 5)
+        accuracy = max(((len(start_text) - back_space_counter) / len(start_text)), 0.00001)*100
+        accuracy = round(accuracy)
+        stdscr.clear()
+        stdscr.addstr(start_text)
+        stdscr.addstr(1, 0, f"WPM: {wpm}")
+        stdscr.addstr(2, 0, f"Your Accuracy: {accuracy}%")
+
+        for i, char in enumerate(current_text):
+        
+            if char == start_text[i]:
+                stdscr.addstr(0, i, char, curses.color_pair(1))
+
+            elif char != start_text[i] and char == " ":
+                stdscr.addstr(0, i,'_', curses.color_pair(2))
+
+            else:
+                stdscr.addstr(0, i, char, curses.color_pair(2))
+                
+        
+        stdscr.refresh()
+
+        try:
+            key = stdscr.getkey()
+        except:
+            continue
+
+        if key == "SHF_PADENTER":
+            key = "'"
+
+        if ord(key) == 27:
+            exit()
+
+        if key in ('\b'):
+            if len(current_text) > 0:
+                current_text.pop()
+                back_space_counter = back_space_counter + 1
+
+
+        elif len(current_text) < len(start_text):
+            current_text.append(key)
+
+        if "".join(current_text) == start_text:
+            stdscr.clear()
+            stdscr.addstr(0, 0, f"Your WPM: {wpm}")
+            stdscr.addstr(1, 0, f"Your Accuracy: {accuracy}%")
+            stdscr.refresh()
+            time.sleep(2)
+            break
+
+        
+
+def main(stdscr):
+    curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
+    curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
+
+    start(stdscr)
+    display_text(stdscr)
+    while True:
+        stdscr.nodelay(False)
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Press Esc to exit program...")
+        stdscr.addstr(1, 0, "Press any button to play again...")
+        stdscr.refresh()
+        key = stdscr.getkey()
+        if ord(key) == 27:
+            exit()
+        else:
+            display_text(stdscr)
+
+
+
+wrapper(main)
